@@ -1,0 +1,52 @@
+# 🛠️ MindFind
+
+[![Stars](https://img.shields.io/github/stars/sergiumurgescu88-lgtm/mindfind?style=for-the-badge&color=yellow)](https://github.com/sergiumurgescu88-lgtm/mindfind/stargazers)
+[![License](https://img.shields.io/github/license/sergiumurgescu88-lgtm/mindfind?style=for-the-badge&color=blue)](LICENSE)
+[![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+
+> **The open-source platform connecting clients with trusted, verified tradespeople.**  
+> Built for speed, reliability, and real-time communication.
+
+---
+
+## 📖 About The Project
+
+Finding a reliable plumber, electrician, or carpenter shouldn't be a hassle. **MindFind** is a modern, full-stack web application designed to bridge the gap between homeowners and skilled professionals. 
+
+Whether you need a quick repair or a major renovation, MindFind provides a seamless experience to post requests, receive competitive offers, and communicate in real-time, all within a secure and intuitive interface.
+
+### ✨ Key Features
+- 👥 **Role-Based Access:** Dedicated dashboards for Clients, Workers (Tradespeople), and Administrators.
+- ⚡ **Real-Time Chat:** Instant messaging between clients and workers powered by Socket.io.
+- 📝 **Request & Offer System:** Clients post detailed job requests; workers submit competitive bids.
+- ⭐ **Reviews & Ratings:** Build trust through a transparent feedback system.
+- 📱 **Fully Responsive:** Beautiful, mobile-first UI built with Tailwind CSS.
+- 🔒 **Secure by Design:** JWT authentication, password hashing, and protected API routes.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Tailwind CSS, React Router, Axios |
+| **Backend** | Node.js, Express.js, Socket.io |
+| **Database** | PostgreSQL (with native SQL migrations) |
+| **Deployment** | Nginx, Systemd, Let's Encrypt (HTTPS) |
+
+---
+
+## 🚀 Quick Start (Local Development)
+
+Get the project running on your local machine in minutes.
+
+### Prerequisites
+- Node.js (v18 or higher)
+- PostgreSQL (v14 or higher)
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/sergiumurgescu88-lgtm/mindfind.git
+cd mindfind
