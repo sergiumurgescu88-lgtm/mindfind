@@ -1,0 +1,16 @@
+[Unit]
+Description=Sergiu Mind Find API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/sergiumind/app/server
+EnvironmentFile=/var/www/sergiumind/app/server/.env
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+RestartSec=5
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

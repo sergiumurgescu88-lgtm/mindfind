@@ -1,0 +1,16 @@
+# Dependințe (se reinstalează cu npm install)
+node_modules/
+
+# Fișiere compilate
+dist/
+build/
+
+# Variabile de mediu și secrete (NU se push-uiesc niciodată!)
+.env
+.env.local
+.env.*.local
+
+# Log-uri și fișiere de sistem
+*.log
+.DS_Store
+Thumbs.db
