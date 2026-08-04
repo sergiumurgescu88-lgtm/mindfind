@@ -1,0 +1,11 @@
+// PATCH: Forțare redirect după login
+const originalLogin = login;
+login = async (email, password) => {
+  const user = await originalLogin(email, password);
+  if (user.role === 'worker') {
+    window.location.href = '/worker';
+  } else {
+    window.location.href = '/client';
+  }
+  return user;
+};

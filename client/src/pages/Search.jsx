@@ -6,6 +6,7 @@ import WorkerCard from '../components/WorkerCard';
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
+  const [cities, setCities] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,6 +15,7 @@ export default function Search() {
 
   useEffect(() => {
     api.get('/categories').then((res) => setCategories(res.data)).catch(() => {});
+    api.get('/cities').then((res) => setCities(res.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -47,12 +49,16 @@ export default function Search() {
             <option key={c.id} value={c.slug}>{c.name}</option>
           ))}
         </select>
-        <input
-          defaultValue={city}
-          onBlur={(e) => updateParam('city', e.target.value)}
-          placeholder="Oraș"
-          className="input-field"
-        />
+        <select
+          value={city}
+          onChange={(e) => updateParam('city', e.target.value)}
+          className="input-field sm:w-64"
+        >
+          <option value="">Toate orașele</option>
+          {cities.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
       </div>
 
       {loading ? (

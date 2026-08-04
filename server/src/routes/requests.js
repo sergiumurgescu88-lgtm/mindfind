@@ -1,3 +1,4 @@
+const { emitNotification, userSockets } = require('../sockets/chat');
 const express = require('express');
 const { pool } = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -139,6 +140,16 @@ router.post('/offers/:offerId/accept', authenticate, authorize('client'), async 
        RETURNING *`,
       [request.id, req.user.id, offer.worker_id]
     );
+    // Emitere notificare catre meserias
+    const io = req.app.get('io');
+    if (io) {
+      await emitNotification(io, offer.worker_id, {
+        type: 'offer_accepted',
+        title: 'Ofertă acceptată!',
+        message: `${request.title}`,
+        link: '/worker'
+      });
+    }
     res.json({ ok: true, conversation: convo.rows[0] });
   } catch (err) {
     next(err);
@@ -161,3 +172,20 @@ router.post('/:id/complete', authenticate, authorize('client'), async (req, res,
 });
 
 module.exports = router;
+
+// Worker's submitted offers
+router.get('/my-offers', authenticate, authorize('worker'), async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT o.*, r.title AS request_title, r.city, r.status AS request_status
+       FROM offers o
+       JOIN requests r ON r.id = o.request_id
+       WHERE o.worker_id = $1
+       ORDER BY o.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});

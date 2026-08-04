@@ -1,0 +1,119 @@
+const express = require('express');
+const { pool } = require('../db');
+const { authenticate, authorize } = require('../middleware/auth');
+
+const router = express.Router();
+
+// Search workers by category slug + city + free text
+router.get('/', async (req, res, next) => {
+  try {
+    const { category, city, q } = req.query;
+    const params = [];
+    const conditions = [`u.role = 'worker'`, `u.is_banned = false`];
+
+    let join = '';
+    if (category) {
+      params.push(category);
+      join = `JOIN worker_categories wc ON wc.worker_id = u.id
+              JOIN categories c ON c.id = wc.category_id AND c.slug = $${params.length}`;
+    }
+    if (city) {
+      params.push(`%${city}%`);
+      conditions.push(`u.city ILIKE $${params.length}`);
+    }
+    if (q) {
+      params.push(`%${q}%`);
+      conditions.push(`(wp.headline ILIKE $${params.length} OR u.full_name ILIKE $${params.length})`);
+    }
+
+    const query = `
+      SELECT u.id, u.full_name, u.city, wp.headline, wp.photo_url, wp.verified,
+             wp.avg_rating, wp.review_count,
+             COALESCE(array_agg(DISTINCT cat.name) FILTER (WHERE cat.name IS NOT NULL), '{}') AS categories
+      FROM users u
+      JOIN worker_profiles wp ON wp.user_id = u.id
+      ${join}
+      LEFT JOIN worker_categories wc2 ON wc2.worker_id = u.id
+      LEFT JOIN categories cat ON cat.id = wc2.category_id
+      WHERE ${conditions.join(' AND ')}
+      GROUP BY u.id, wp.headline, wp.photo_url, wp.verified, wp.avg_rating, wp.review_count
+      ORDER BY wp.avg_rating DESC, wp.review_count DESC
+      LIMIT 50
+    `;
+    const { rows } = await pool.query(query, params);
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Public profile
+router.get('/:id', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT u.id, u.full_name, u.city, u.created_at, wp.headline, wp.bio, wp.photo_url,
+              wp.verified, wp.avg_rating, wp.review_count,
+              COALESCE(array_agg(DISTINCT cat.name) FILTER (WHERE cat.name IS NOT NULL), '{}') AS categories
+       FROM users u
+       JOIN worker_profiles wp ON wp.user_id = u.id
+       LEFT JOIN worker_categories wc ON wc.worker_id = u.id
+       LEFT JOIN categories cat ON cat.id = wc.category_id
+       WHERE u.id = $1 AND u.role = 'worker'
+       GROUP BY u.id, wp.headline, wp.bio, wp.photo_url, wp.verified, wp.avg_rating, wp.review_count`,
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Meseriaș inexistent.' });
+
+    const reviews = await pool.query(
+      `SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS reviewer_name
+       FROM reviews r JOIN users u ON u.id = r.reviewer_id
+       WHERE r.reviewee_id = $1 AND r.direction = 'client_to_worker'
+       ORDER BY r.created_at DESC LIMIT 20`,
+      [req.params.id]
+    );
+
+    res.json({ ...rows[0], reviews: reviews.rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update own worker profile
+router.put('/me/profile', authenticate, authorize('worker'), async (req, res, next) => {
+  try {
+    const { headline, bio, photo_url, category_ids } = req.body;
+    await pool.query(
+      `UPDATE worker_profiles SET headline = $1, bio = $2, photo_url = $3, updated_at = now()
+       WHERE user_id = $4`,
+      [headline || null, bio || null, photo_url || null, req.user.id]
+    );
+    if (Array.isArray(category_ids)) {
+      await pool.query(`DELETE FROM worker_categories WHERE worker_id = $1`, [req.user.id]);
+      for (const catId of category_ids) {
+        await pool.query(
+          `INSERT INTO worker_categories (worker_id, category_id) VALUES ($1, $2)
+           ON CONFLICT DO NOTHING`,
+          [req.user.id, catId]
+        );
+      }
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+module.exports = router;
+
+// ENDPOINT NOU: Lista de orase distincte
+router.get('/cities', async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT DISTINCT city FROM users WHERE city IS NOT NULL AND city != '' ORDER BY city"
+    );
+    res.json(result.rows.map(r => r.city));
+  } catch (err) {
+    console.error('Eroare /cities:', err);
+    res.status(500).json({ error: 'Eroare la preluarea oraselor' });
+  }
+});
